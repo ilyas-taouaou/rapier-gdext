@@ -1,0 +1,10 @@
+CollisionShape3D
+MeshInstance3D
+RigidBody3D
+RapierPhysicsCollider
+CollisionShape2D
+RapierPhysicsRigidBody
+Camera3D
+RapierPhysicsState
+Node3D
+Node

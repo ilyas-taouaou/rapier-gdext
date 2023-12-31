@@ -1,0 +1,121 @@
+[gd_scene load_steps=13 format=3 uid="uid://jh7bnyylffpw"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tlnjn"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_7uj7f"]
+sky_material = SubResource("ProceduralSkyMaterial_tlnjn")
+
+[sub_resource type="Environment" id="Environment_nm2ig"]
+background_mode = 2
+sky = SubResource("Sky_7uj7f")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_bnofh"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5reix"]
+size = Vector3(10, 1, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_704ck"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_g70nw"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_b3eoy"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_55db7"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_k3nbu"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_ot4bx"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_kwyfg"]
+
+[node name="Main" type="Node"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_nm2ig")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
+shadow_enabled = true
+
+[node name="World" type="Node3D" parent="."]
+
+[node name="RapierPhysicsState" type="RapierPhysicsState" parent="World"]
+
+[node name="RapierPhysicsRigidBody" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
+fixed = true
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/RapierPhysicsState/RapierPhysicsRigidBody"]
+transform = Transform3D(10, 0, 0, 0, 1, 0, 0, 0, 10, 0, 0, 0)
+mesh = SubResource("BoxMesh_bnofh")
+
+[node name="RapierPhysicsCollider" type="RapierPhysicsCollider" parent="World/RapierPhysicsState/RapierPhysicsRigidBody"]
+shape = SubResource("BoxShape3D_5reix")
+
+[node name="RapierPhysicsRigidBody2" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
+transform = Transform3D(1, 0, 0, 0, 0.990545, -0.137185, 0, 0.137185, 0.990545, -0.062458, 1.46175, -0.469677)
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/RapierPhysicsState/RapierPhysicsRigidBody2"]
+mesh = SubResource("BoxMesh_bnofh")
+
+[node name="RapierPhysicsCollider" type="RapierPhysicsCollider" parent="World/RapierPhysicsState/RapierPhysicsRigidBody2"]
+shape = SubResource("BoxShape3D_704ck")
+
+[node name="RapierPhysicsRigidBody7" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
+transform = Transform3D(1, 0, 0, 0, 0.721047, 0.692886, 0, -0.692886, 0.721047, -1.40807, 5.52346, 2.57339)
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/RapierPhysicsState/RapierPhysicsRigidBody7"]
+mesh = SubResource("CapsuleMesh_g70nw")
+
+[node name="RapierPhysicsCollider" type="RapierPhysicsCollider" parent="World/RapierPhysicsState/RapierPhysicsRigidBody7"]
+shape = SubResource("CapsuleShape3D_b3eoy")
+transform = Transform3D(1, 0, 0, 0, 1, 2.98023e-08, 0, -2.98023e-08, 1, 0, 0, 0)
+
+[node name="RapierPhysicsRigidBody3" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
+transform = Transform3D(0.708771, 0, 0.705439, 0, 1, 0, -0.705439, 0, 0.708771, 2.86037, 1.46175, -0.469677)
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/RapierPhysicsState/RapierPhysicsRigidBody3"]
+mesh = SubResource("BoxMesh_bnofh")
+
+[node name="RapierPhysicsCollider" type="RapierPhysicsCollider" parent="World/RapierPhysicsState/RapierPhysicsRigidBody3"]
+shape = SubResource("BoxShape3D_704ck")
+
+[node name="RapierPhysicsRigidBody4" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.958484, 1.46175, 0.822629)
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/RapierPhysicsState/RapierPhysicsRigidBody4"]
+mesh = SubResource("BoxMesh_bnofh")
+
+[node name="RapierPhysicsCollider" type="RapierPhysicsCollider" parent="World/RapierPhysicsState/RapierPhysicsRigidBody4"]
+shape = SubResource("BoxShape3D_704ck")
+
+[node name="RapierPhysicsRigidBody5" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
+transform = Transform3D(0.650814, 0.759237, 0, -0.574661, 0.492596, 0.65354, 0.496192, -0.425333, 0.756892, 0.958484, 3.52489, 0.100351)
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/RapierPhysicsState/RapierPhysicsRigidBody5"]
+mesh = SubResource("CylinderMesh_55db7")
+
+[node name="RapierPhysicsCollider" type="RapierPhysicsCollider" parent="World/RapierPhysicsState/RapierPhysicsRigidBody5"]
+shape = SubResource("CylinderShape3D_k3nbu")
+
+[node name="RapierPhysicsRigidBody6" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
+transform = Transform3D(1, 0, 0, 0, 0.657428, 0.753518, 0, -0.753518, 0.657428, 2.09925, 3.22507, -0.353997)
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/RapierPhysicsState/RapierPhysicsRigidBody6"]
+mesh = SubResource("SphereMesh_ot4bx")
+
+[node name="RapierPhysicsCollider" type="RapierPhysicsCollider" parent="World/RapierPhysicsState/RapierPhysicsRigidBody6"]
+shape = SubResource("SphereShape3D_kwyfg")
+
+[node name="Camera3D" type="Camera3D" parent="World"]
+transform = Transform3D(-0.943103, -0.332381, 0.00892141, -0.311111, 0.891584, 0.329071, -0.117331, 0.307572, -0.944263, -0.621067, 2.42628, -5.27987)
