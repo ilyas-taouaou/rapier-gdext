@@ -1,4 +1,6 @@
-use godot::engine::{BoxShape3D, CapsuleShape3D, CylinderShape3D, Node3D, Shape3D, SphereShape3D};
+use godot::engine::{
+    BoxShape3D, CapsuleShape3D, CylinderShape3D, Node3D, ProjectSettings, Shape3D, SphereShape3D,
+};
 use godot::prelude::*;
 use rapier3d_f64::na;
 use rapier3d_f64::prelude::*;
@@ -135,7 +137,9 @@ impl RapierPhysicsRigidBody {
 
     fn insert_collider(&mut self, collider: Collider) -> ColliderHandle {
         let mut state_mut = self.physics_state.as_mut().unwrap().bind_mut();
-        state_mut.insert_collider(collider, self.handle.unwrap())
+        state_mut
+            .inner
+            .insert_collider(collider, self.handle.unwrap())
     }
 }
 
@@ -147,7 +151,7 @@ impl INode3D for RapierPhysicsRigidBody {
 
     fn physics_process(&mut self, _delta: f64) {
         let binding = self.physics_state.as_ref().unwrap().bind();
-        let rigid_body = binding.query_rigid_body(self.handle.unwrap());
+        let rigid_body = binding.inner.query_rigid_body(self.handle.unwrap());
         let position: GVector = (*rigid_body.translation()).into();
         let rotation = rigid_body.rotation();
         self.node_3d.set_global_position(position.into());
@@ -175,15 +179,14 @@ impl INode3D for RapierPhysicsRigidBody {
             .cast::<RapierPhysicsState>();
         {
             let mut state_mut = state.bind_mut();
-            self.handle = Some(state_mut.insert_rigid_body(rigid_body));
+            self.handle = Some(state_mut.inner.insert_rigid_body(rigid_body));
         }
         self.physics_state = Some(state);
     }
 }
 
-#[derive(GodotClass)]
-#[class(base=Node3D)]
-struct RapierPhysicsState {
+#[derive(Default)]
+struct RapierPhysicsStateInner {
     rigid_body_set: RigidBodySet,
     collider_set: ColliderSet,
     gravity: na::SVector<f64, 3>,
@@ -197,45 +200,27 @@ struct RapierPhysicsState {
     ccd_solver: CCDSolver,
     physics_hooks: (),
     event_handler: (),
+}
+
+#[derive(GodotClass)]
+#[class(base=Node3D)]
+struct RapierPhysicsState {
+    #[export]
+    gravity: Vector3,
+    #[export]
+    time_scale: f64,
+    inner: RapierPhysicsStateInner,
     #[base]
     node_3d: Base<Node3D>,
 }
 
-impl RapierPhysicsState {
-    fn new(node_3d: Base<Node3D>) -> Self {
-        let rigid_body_set = RigidBodySet::new();
-        let collider_set = ColliderSet::new();
-        let gravity = vector![0.0, -9.81, 0.0];
-        let integration_parameters = IntegrationParameters::default();
-        let physics_pipeline = PhysicsPipeline::new();
-        let island_manager = IslandManager::new();
-        let broad_phase = BroadPhase::new();
-        let narrow_phase = NarrowPhase::new();
-        let impulse_joint_set = ImpulseJointSet::new();
-        let multibody_joint_set = MultibodyJointSet::new();
-        let ccd_solver = CCDSolver::new();
-        let physics_hooks = ();
-        let event_handler = ();
-        Self {
-            rigid_body_set,
-            collider_set,
-            node_3d,
-            gravity,
-            integration_parameters,
-            physics_pipeline,
-            island_manager,
-            broad_phase,
-            narrow_phase,
-            impulse_joint_set,
-            multibody_joint_set,
-            ccd_solver,
-            physics_hooks,
-            event_handler,
-        }
+impl RapierPhysicsStateInner {
+    fn new() -> Self {
+        Default::default()
     }
 
-    fn step(&mut self, delta: f64) {
-        self.integration_parameters.dt = delta;
+    fn step(&mut self, delta: f64, time_scale: f64) {
+        self.integration_parameters.dt = delta * time_scale;
         self.physics_pipeline.step(
             &self.gravity,
             &self.integration_parameters,
@@ -267,6 +252,22 @@ impl RapierPhysicsState {
     }
 }
 
+impl RapierPhysicsState {
+    fn new(node_3d: Base<Node3D>) -> Self {
+        Self {
+            gravity: ProjectSettings::singleton()
+                .get_setting("physics/3d/default_gravity_vector".into())
+                .to::<Vector3>()
+                * ProjectSettings::singleton()
+                    .get_setting("physics/3d/default_gravity".into())
+                    .to::<real>(),
+            time_scale: 1.0,
+            inner: RapierPhysicsStateInner::new(),
+            node_3d,
+        }
+    }
+}
+
 #[godot_api]
 impl INode3D for RapierPhysicsState {
     fn init(node_3d: Base<Node3D>) -> Self {
@@ -274,7 +275,12 @@ impl INode3D for RapierPhysicsState {
     }
 
     fn physics_process(&mut self, delta: f64) {
-        self.step(delta);
+        self.inner.step(delta, self.time_scale);
+    }
+
+    fn enter_tree(&mut self) {
+        let x: GVector = self.gravity.into();
+        self.inner.gravity = x.into();
     }
 }
 

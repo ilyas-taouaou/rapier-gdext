@@ -1,4 +1,6 @@
-[gd_scene load_steps=13 format=3 uid="uid://jh7bnyylffpw"]
+[gd_scene load_steps=14 format=3 uid="uid://jh7bnyylffpw"]
+
+[ext_resource type="Script" path="res://scenes/RapierPhysicsState.gd" id="1_fsdaf"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tlnjn"]
 sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
@@ -44,6 +46,8 @@ shadow_enabled = true
 [node name="World" type="Node3D" parent="."]
 
 [node name="RapierPhysicsState" type="RapierPhysicsState" parent="World"]
+time_scale = 0.0
+script = ExtResource("1_fsdaf")
 
 [node name="RapierPhysicsRigidBody" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
 fixed = true
