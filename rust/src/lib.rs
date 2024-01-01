@@ -220,22 +220,43 @@ impl RapierPhysicsStateInner {
     }
 
     fn step(&mut self, delta: f64, time_scale: f64) {
-        self.integration_parameters.dt = delta * time_scale;
-        self.physics_pipeline.step(
-            &self.gravity,
-            &self.integration_parameters,
-            &mut self.island_manager,
-            &mut self.broad_phase,
-            &mut self.narrow_phase,
-            &mut self.rigid_body_set,
-            &mut self.collider_set,
-            &mut self.impulse_joint_set,
-            &mut self.multibody_joint_set,
-            &mut self.ccd_solver,
-            None,
-            &self.physics_hooks,
-            &self.event_handler,
-        );
+        self.integration_parameters.dt = delta;
+        for _ in 0..time_scale as usize {
+            self.physics_pipeline.step(
+                &self.gravity,
+                &self.integration_parameters,
+                &mut self.island_manager,
+                &mut self.broad_phase,
+                &mut self.narrow_phase,
+                &mut self.rigid_body_set,
+                &mut self.collider_set,
+                &mut self.impulse_joint_set,
+                &mut self.multibody_joint_set,
+                &mut self.ccd_solver,
+                None,
+                &self.physics_hooks,
+                &self.event_handler,
+            );
+        }
+        let time_scale_fraction = time_scale.fract();
+        if !time_scale_fraction.is_zero_approx() {
+            self.integration_parameters.dt = delta * time_scale.fract();
+            self.physics_pipeline.step(
+                &self.gravity,
+                &self.integration_parameters,
+                &mut self.island_manager,
+                &mut self.broad_phase,
+                &mut self.narrow_phase,
+                &mut self.rigid_body_set,
+                &mut self.collider_set,
+                &mut self.impulse_joint_set,
+                &mut self.multibody_joint_set,
+                &mut self.ccd_solver,
+                None,
+                &self.physics_hooks,
+                &self.event_handler,
+            );
+        }
     }
 
     fn insert_rigid_body(&mut self, rigid_body: RigidBody) -> RigidBodyHandle {
