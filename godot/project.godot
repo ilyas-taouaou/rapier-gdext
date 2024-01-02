@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Godot Rapier 3d 64"
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.2", "Forward Plus")
+config/features=PackedStringArray("4.2", "Double Precision", "Forward Plus")
 config/icon="res://icon.svg"
 
 [display]

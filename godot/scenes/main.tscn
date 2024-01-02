@@ -46,7 +46,6 @@ shadow_enabled = true
 [node name="World" type="Node3D" parent="."]
 
 [node name="RapierPhysicsState" type="RapierPhysicsState" parent="World"]
-time_scale = 0.0
 script = ExtResource("1_fsdaf")
 
 [node name="RapierPhysicsRigidBody" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]

@@ -1,58 +1,10 @@
+use godot::engine::notify::Node3DNotification;
 use godot::engine::{
     BoxShape3D, CapsuleShape3D, CylinderShape3D, Node3D, ProjectSettings, Shape3D, SphereShape3D,
 };
 use godot::prelude::*;
 use rapier3d_f64::na;
 use rapier3d_f64::prelude::*;
-use std::ops::{Deref, DerefMut};
-
-struct GVector(Vector<Real>);
-
-impl Deref for GVector {
-    type Target = Vector<Real>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for GVector {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl From<Vector3> for GVector {
-    fn from(value: Vector3) -> Self {
-        GVector(Vector::<Real>::new(
-            value.x as Real,
-            value.y as Real,
-            value.z as Real,
-        ))
-    }
-}
-
-impl From<Vector<Real>> for GVector {
-    fn from(value: Vector<Real>) -> Self {
-        GVector(value)
-    }
-}
-
-impl Into<Vector<Real>> for GVector {
-    fn into(self) -> Vector<Real> {
-        self.0
-    }
-}
-
-impl Into<Vector3> for GVector {
-    fn into(self) -> Vector3 {
-        Vector3 {
-            x: self.x as real,
-            y: self.y as real,
-            z: self.z as real,
-        }
-    }
-}
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
@@ -85,19 +37,14 @@ impl INode3D for RapierPhysicsCollider {
     fn enter_tree(&mut self) {
         let shape = self.shape.clone().unwrap();
         let collider = if let Ok(shape) = shape.clone().try_cast::<BoxShape3D>() {
-            let half_size: GVector = (shape.get_size() / 2.0).into();
-            ColliderBuilder::cuboid(half_size.x, half_size.y, half_size.z)
+            let half_size = shape.get_size() / 2.0;
+            ColliderBuilder::cuboid(half_size.x.into(), half_size.y.into(), half_size.z.into())
         } else if let Ok(shape) = shape.clone().try_cast::<SphereShape3D>() {
-            let radius = shape.get_radius();
-            ColliderBuilder::ball(radius as Real)
+            ColliderBuilder::ball(shape.get_radius().into())
         } else if let Ok(shape) = shape.clone().try_cast::<CapsuleShape3D>() {
-            let radius = shape.get_radius() as Real;
-            let height = shape.get_height() as Real;
-            ColliderBuilder::capsule_y(height / 2.0, radius)
+            ColliderBuilder::capsule_y((shape.get_height() / 2.0).into(), shape.get_radius().into())
         } else if let Ok(shape) = shape.clone().try_cast::<CylinderShape3D>() {
-            let radius = shape.get_radius() as Real;
-            let height = shape.get_height() as Real;
-            ColliderBuilder::cylinder(height / 2.0, radius)
+            ColliderBuilder::cylinder((shape.get_height() / 2.0).into(), shape.get_radius().into())
         } else {
             godot_error!("Rapier Physics: The collision shape isn't implemented yet");
             unimplemented!("The collision shape isn't implemented yet")
@@ -111,6 +58,14 @@ impl INode3D for RapierPhysicsCollider {
             .cast::<RapierPhysicsRigidBody>();
         parent.bind_mut().insert_collider(collider);
         self.parent = Some(parent);
+    }
+
+    fn exit_tree(&mut self) {
+        self.parent
+            .as_mut()
+            .unwrap()
+            .bind_mut()
+            .remove_collider(self.handle.unwrap());
     }
 }
 
@@ -141,6 +96,29 @@ impl RapierPhysicsRigidBody {
             .inner
             .insert_collider(collider, self.handle.unwrap())
     }
+
+    fn remove_collider(&mut self, collider: ColliderHandle) {
+        let mut state_mut = self.physics_state.as_mut().unwrap().bind_mut();
+        state_mut.inner.remove_collider(collider);
+    }
+
+    fn render(&mut self) {
+        let binding = self.physics_state.as_ref().unwrap().bind();
+        let rigid_body = binding.inner.query_rigid_body(self.handle.unwrap());
+        let translation = rigid_body.translation();
+        let rotation = rigid_body.rotation();
+        self.node_3d.set_global_position(Vector3::new(
+            translation.x as real,
+            translation.y as real,
+            translation.z as real,
+        ));
+        self.node_3d.set_quaternion(Quaternion::new(
+            rotation.i as real,
+            rotation.j as real,
+            rotation.k as real,
+            rotation.w as real,
+        ));
+    }
 }
 
 #[godot_api]
@@ -149,28 +127,26 @@ impl INode3D for RapierPhysicsRigidBody {
         Self::new(node_3d)
     }
 
-    fn physics_process(&mut self, _delta: f64) {
-        let binding = self.physics_state.as_ref().unwrap().bind();
-        let rigid_body = binding.inner.query_rigid_body(self.handle.unwrap());
-        let position: GVector = (*rigid_body.translation()).into();
-        let rotation = rigid_body.rotation();
-        self.node_3d.set_global_position(position.into());
-        self.node_3d.set_quaternion(Quaternion::new(
-            rotation.i as real,
-            rotation.j as real,
-            rotation.k as real,
-            rotation.w as real,
-        ));
+    fn on_notification(&mut self, what: Node3DNotification) {
+        match what {
+            Node3DNotification::PhysicsProcess => self.render(),
+            Node3DNotification::Ready => self.node_3d.set_physics_process(true),
+            _ => {}
+        };
     }
 
     fn enter_tree(&mut self) {
-        let gvector: GVector = self.node_3d.get_global_position().into();
+        let position = self.node_3d.get_global_position();
         let rigid_body = if self.fixed {
             RigidBodyBuilder::fixed()
         } else {
             RigidBodyBuilder::dynamic()
         }
-        .translation(gvector.into())
+        .translation(Vector::new(
+            position.x.into(),
+            position.y.into(),
+            position.z.into(),
+        ))
         .build();
         let mut state = self
             .node_3d
@@ -202,6 +178,17 @@ struct RapierPhysicsStateInner {
     event_handler: (),
 }
 
+impl RapierPhysicsStateInner {
+    fn remove_collider(&mut self, collider: ColliderHandle) {
+        self.collider_set.remove(
+            collider,
+            &mut self.island_manager,
+            &mut self.rigid_body_set,
+            true,
+        );
+    }
+}
+
 #[derive(GodotClass)]
 #[class(base=Node3D)]
 struct RapierPhysicsState {
@@ -219,43 +206,30 @@ impl RapierPhysicsStateInner {
         Default::default()
     }
 
-    fn step(&mut self, delta: f64, time_scale: f64) {
-        self.integration_parameters.dt = delta;
-        for _ in 0..time_scale as usize {
-            self.physics_pipeline.step(
-                &self.gravity,
-                &self.integration_parameters,
-                &mut self.island_manager,
-                &mut self.broad_phase,
-                &mut self.narrow_phase,
-                &mut self.rigid_body_set,
-                &mut self.collider_set,
-                &mut self.impulse_joint_set,
-                &mut self.multibody_joint_set,
-                &mut self.ccd_solver,
-                None,
-                &self.physics_hooks,
-                &self.event_handler,
-            );
-        }
+    fn step(&mut self, delta_time: f64) {
+        self.integration_parameters.dt = delta_time;
+        self.physics_pipeline.step(
+            &self.gravity,
+            &self.integration_parameters,
+            &mut self.island_manager,
+            &mut self.broad_phase,
+            &mut self.narrow_phase,
+            &mut self.rigid_body_set,
+            &mut self.collider_set,
+            &mut self.impulse_joint_set,
+            &mut self.multibody_joint_set,
+            &mut self.ccd_solver,
+            None,
+            &self.physics_hooks,
+            &self.event_handler,
+        );
+    }
+
+    fn scaled_step(&mut self, delta: f64, time_scale: f64) {
+        (0..time_scale as usize).for_each(|_| self.step(delta));
         let time_scale_fraction = time_scale.fract();
         if !time_scale_fraction.is_zero_approx() {
-            self.integration_parameters.dt = delta * time_scale.fract();
-            self.physics_pipeline.step(
-                &self.gravity,
-                &self.integration_parameters,
-                &mut self.island_manager,
-                &mut self.broad_phase,
-                &mut self.narrow_phase,
-                &mut self.rigid_body_set,
-                &mut self.collider_set,
-                &mut self.impulse_joint_set,
-                &mut self.multibody_joint_set,
-                &mut self.ccd_solver,
-                None,
-                &self.physics_hooks,
-                &self.event_handler,
-            );
+            self.step(delta * time_scale_fraction);
         }
     }
 
@@ -275,11 +249,12 @@ impl RapierPhysicsStateInner {
 
 impl RapierPhysicsState {
     fn new(node_3d: Base<Node3D>) -> Self {
+        let project_settings = ProjectSettings::singleton();
         Self {
-            gravity: ProjectSettings::singleton()
+            gravity: project_settings
                 .get_setting("physics/3d/default_gravity_vector".into())
                 .to::<Vector3>()
-                * ProjectSettings::singleton()
+                * project_settings
                     .get_setting("physics/3d/default_gravity".into())
                     .to::<real>(),
             time_scale: 1.0,
@@ -295,13 +270,25 @@ impl INode3D for RapierPhysicsState {
         Self::new(node_3d)
     }
 
-    fn physics_process(&mut self, delta: f64) {
-        self.inner.step(delta, self.time_scale);
+    fn on_notification(&mut self, what: Node3DNotification) {
+        match what {
+            Node3DNotification::PhysicsProcess => {
+                self.inner.scaled_step(
+                    self.node_3d.get_physics_process_delta_time(),
+                    self.time_scale,
+                );
+            }
+            Node3DNotification::Ready => self.node_3d.set_physics_process(true),
+            _ => {}
+        }
     }
 
     fn enter_tree(&mut self) {
-        let x: GVector = self.gravity.into();
-        self.inner.gravity = x.into();
+        self.inner.gravity = Vector::<Real>::new(
+            self.gravity.x.into(),
+            self.gravity.y.into(),
+            self.gravity.z.into(),
+        );
     }
 }
 
