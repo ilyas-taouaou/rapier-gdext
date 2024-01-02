@@ -35,6 +35,8 @@ impl INode3D for RapierPhysicsCollider {
     }
 
     fn enter_tree(&mut self) {
+        let position = self.node_3d.get_position();
+        let rotation = self.node_3d.get_rotation();
         let shape = self.shape.clone().unwrap();
         let collider = if let Ok(shape) = shape.clone().try_cast::<BoxShape3D>() {
             let half_size = shape.get_size() / 2.0;
@@ -49,6 +51,10 @@ impl INode3D for RapierPhysicsCollider {
             godot_error!("Rapier Physics: The collision shape isn't implemented yet");
             unimplemented!("The collision shape isn't implemented yet")
         }
+        .position(Isometry::new(
+            Vector::new(position.x.into(), position.y.into(), position.z.into()),
+            Vector::new(rotation.x.into(), rotation.y.into(), rotation.z.into()),
+        ))
         .build();
 
         let mut parent = self
@@ -69,11 +75,20 @@ impl INode3D for RapierPhysicsCollider {
     }
 }
 
+#[derive(Property, Export)]
+#[repr(u8)]
+enum RapierPhysicsRigidBodyType {
+    Dynamic = 0,
+    Fixed = 1,
+    KinematicPositionBased = 2,
+    KinematicVelocityBased = 3,
+}
+
 #[derive(GodotClass)]
 #[class(base=Node3D)]
 struct RapierPhysicsRigidBody {
     #[export]
-    fixed: bool,
+    body_type: RapierPhysicsRigidBodyType,
     handle: Option<RigidBodyHandle>,
     physics_state: Option<Gd<RapierPhysicsState>>,
     #[base]
@@ -83,7 +98,7 @@ struct RapierPhysicsRigidBody {
 impl RapierPhysicsRigidBody {
     fn new(node_3d: Base<Node3D>) -> Self {
         Self {
-            fixed: false,
+            body_type: RapierPhysicsRigidBodyType::Fixed,
             handle: None,
             physics_state: None,
             node_3d,
@@ -137,15 +152,26 @@ impl INode3D for RapierPhysicsRigidBody {
 
     fn enter_tree(&mut self) {
         let position = self.node_3d.get_global_position();
-        let rigid_body = if self.fixed {
-            RigidBodyBuilder::fixed()
-        } else {
-            RigidBodyBuilder::dynamic()
-        }
+        let rotation = self.node_3d.get_rotation();
+        let rigid_body = RigidBodyBuilder::new(match self.body_type {
+            RapierPhysicsRigidBodyType::Dynamic => RigidBodyType::Dynamic,
+            RapierPhysicsRigidBodyType::Fixed => RigidBodyType::Fixed,
+            RapierPhysicsRigidBodyType::KinematicPositionBased => {
+                RigidBodyType::KinematicPositionBased
+            }
+            RapierPhysicsRigidBodyType::KinematicVelocityBased => {
+                RigidBodyType::KinematicVelocityBased
+            }
+        })
         .translation(Vector::new(
             position.x.into(),
             position.y.into(),
             position.z.into(),
+        ))
+        .rotation(AngVector::new(
+            rotation.x.into(),
+            rotation.y.into(),
+            rotation.z.into(),
         ))
         .build();
         let mut state = self

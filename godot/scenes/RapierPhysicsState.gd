@@ -9,6 +9,7 @@ func _ready():
 	while true:
 		await get_tree().create_timer(0).timeout
 		var body = RapierPhysicsRigidBody.new()
+		body.body_type = 0
 		body.global_position = Vector3(randf_range(-5, 5), randf_range(5, 10), randf_range(-5, 5))
 		var collider = RapierPhysicsCollider.new()
 		var mesh = MeshInstance3D.new()
