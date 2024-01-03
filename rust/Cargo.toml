@@ -10,4 +10,10 @@ crate-type = ["cdylib"]
 
 [dependencies]
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["double-precision", "custom-godot"] }
-rapier3d-f64 = "0.17.2"
+rapier3d-f64 = { version = "0.17.2", features = ["simd-stable"] }
+
+[profile.dev.package.rapier3d-f64]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1

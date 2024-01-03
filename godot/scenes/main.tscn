@@ -79,17 +79,6 @@ transform = Transform3D(1, 0, 0, 0, 1, -2.98023e-08, 0, 2.98023e-08, 1, 0, 0, 0)
 mesh = SubResource("CapsuleMesh_g70nw")
 skeleton = NodePath("../..")
 
-[node name="RapierPhysicsRigidBody3" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
-body_type = 0
-transform = Transform3D(0.708771, 0, 0.705439, 0, 1, 0, -0.705439, 0, 0.708771, 2.86037, 1.46175, -0.469677)
-metadata/_edit_group_ = true
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/RapierPhysicsState/RapierPhysicsRigidBody3"]
-mesh = SubResource("BoxMesh_bnofh")
-
-[node name="RapierPhysicsCollider" type="RapierPhysicsCollider" parent="World/RapierPhysicsState/RapierPhysicsRigidBody3"]
-shape = SubResource("BoxShape3D_704ck")
-
 [node name="RapierPhysicsRigidBody4" type="RapierPhysicsRigidBody" parent="World/RapierPhysicsState"]
 body_type = 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.958484, 1.46175, 0.822629)
@@ -133,4 +122,4 @@ mesh = SubResource("SphereMesh_ot4bx")
 shape = SubResource("SphereShape3D_kwyfg")
 
 [node name="Camera3D" type="Camera3D" parent="World"]
-transform = Transform3D(-0.943103, -0.332381, 0.00892141, -0.311111, 0.891584, 0.329071, -0.117331, 0.307572, -0.944263, -0.621067, 2.42628, -5.27987)
+transform = Transform3D(-0.943103, -0.332381, 0.00892141, -0.311111, 0.891584, 0.329071, -0.117331, 0.307572, -0.944263, -0.600038, 3.20196, -7.50566)
